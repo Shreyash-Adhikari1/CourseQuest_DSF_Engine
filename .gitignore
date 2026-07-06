@@ -1,0 +1,32 @@
+# Virtual environment
+cq_dsf_env/
+
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django
+*.log
+db.sqlite3
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ChromaDB vector index
+chroma_db/
+
+# HuggingFace model cache
+.cache/
+
+# prettier ignore
+
+.prettierignore
