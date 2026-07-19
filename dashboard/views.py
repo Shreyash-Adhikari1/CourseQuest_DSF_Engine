@@ -125,4 +125,107 @@ def individual_report(request, test_taker_id):
         'pathway_knowledge_scores': pathway_knowledge_scores,
         'pathway_preference_scores': pathway_preference_scores,
     }
+
     return render(request, 'dashboard/report.html', context)
+
+def download_pdf(request, test_taker_id):
+    """
+    Generates and downloads a PDF report for one assessment.
+    """
+    assessment = get_object_or_404(Assessment, test_taker_id=test_taker_id)
+    recommendation = get_object_or_404(Recommendation, assessment=assessment)
+    criterion_scores = CriterionScore.objects.filter(assessment=assessment)
+    pathway_scores = PathwayScore.objects.filter(
+        assessment=assessment
+    ).select_related('pathway').order_by('-final_score')
+    strengths = RecommendationCriterionResult.objects.filter(
+        recommendation=recommendation,
+        result_type='strength'
+    )
+    improvements = RecommendationCriterionResult.objects.filter(
+        recommendation=recommendation,
+        result_type='improvement'
+    )
+
+    context = {
+        'assessment': assessment,
+        'recommendation': recommendation,
+        'criterion_scores': criterion_scores,
+        'pathway_scores': pathway_scores,
+        'strengths': strengths,
+        'improvements': improvements,
+    }
+
+    html = render_to_string('dashboard/pdf_report.html', context)
+    pdf_buffer = io.BytesIO()
+    pisa.CreatePDF(html, dest=pdf_buffer)
+
+    response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="coursequest_report_{test_taker_id}.pdf"'
+    return response
+
+def send_report_email(request, test_taker_id):
+    """
+    Generates PDF and sends it to the student's email.
+    Only works if email is saved on the assessment.
+    """
+    assessment = get_object_or_404(Assessment, test_taker_id=test_taker_id)
+
+    if not assessment.test_taker_email:
+        from django.contrib import messages
+        messages.error(request, 'No email address saved for this student.')
+        return redirect('individual_report', test_taker_id=test_taker_id)
+
+    recommendation = get_object_or_404(Recommendation, assessment=assessment)
+    criterion_scores = CriterionScore.objects.filter(assessment=assessment)
+    pathway_scores = PathwayScore.objects.filter(
+        assessment=assessment
+    ).select_related('pathway').order_by('-final_score')
+    strengths = RecommendationCriterionResult.objects.filter(
+        recommendation=recommendation,
+        result_type='strength'
+    )
+    improvements = RecommendationCriterionResult.objects.filter(
+        recommendation=recommendation,
+        result_type='improvement'
+    )
+
+    context = {
+        'assessment': assessment,
+        'recommendation': recommendation,
+        'criterion_scores': criterion_scores,
+        'pathway_scores': pathway_scores,
+        'strengths': strengths,
+        'improvements': improvements,
+    }
+
+    # generate PDF
+    html = render_to_string('dashboard/pdf_report.html', context)
+    pdf_buffer = io.BytesIO()
+    pisa.CreatePDF(html, dest=pdf_buffer)
+
+    # send email with PDF attached
+    from django.core.mail import EmailMessage
+    email = EmailMessage(
+        subject=f'CourseQuest — Your Pathway Recommendation Report',
+        body=f'''Dear {assessment.test_taker_name or "Student"},
+
+Please find your CourseQuest pathway recommendation report attached.
+
+Your primary recommendation is: {recommendation.primary_pathway}
+
+Best regards,
+CourseQuest Team''',
+        from_email=None,
+        to=[assessment.test_taker_email]
+    )
+    email.attach(
+        f'coursequest_report_{test_taker_id}.pdf',
+        pdf_buffer.getvalue(),
+        'application/pdf'
+    )
+    email.send()
+
+    from django.contrib import messages
+    messages.success(request, f'Report sent to {assessment.test_taker_email}')
+    return redirect('individual_report', test_taker_id=test_taker_id)
