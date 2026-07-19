@@ -1,0 +1,174 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}CourseQuest — Dashboard{% endblock %}
+
+{% block content %}
+
+<p class="page-title">Global Dashboard</p>
+
+<!-- Stats Row -->
+<div class="grid-3">
+  <div class="card">
+    <div class="stat-number">{{ total_assessments }}</div>
+    <div class="stat-label">Total Assessments</div>
+  </div>
+  <div class="card">
+    <div class="stat-number">{{ pathway_distribution|length }}</div>
+    <div class="stat-label">Active Pathways</div>
+  </div>
+  <div class="card">
+    <div class="stat-number">{{ recent_assessments|length }}</div>
+    <div class="stat-label">Recent Sessions</div>
+  </div>
+</div>
+
+<!-- Recent Assessments Table -->
+<div class="card">
+  <h2>Recent Assessments</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Test Taker ID</th>
+        <th>Session ID</th>
+        <th>Name</th>
+        <th>Submitted</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for assessment in recent_assessments %}
+      <tr>
+        <td><span class="badge">#{{ assessment.test_taker_id }}</span></td>
+        <td>{{ assessment.session_id }}</td>
+        <td>{{ assessment.test_taker_name|default:"—" }}</td>
+        <td>{{ assessment.submitted_at|date:"M d, Y H:i" }}</td>
+        <td>
+          <a
+            href="/dashboard/report/{{ assessment.test_taker_id }}/"
+            class="btn btn-primary"
+          >
+            View Report
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align: center; color: #888">
+          No assessments yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="grid-2">
+    <div class="card">
+        <h2>Pathway Distribution</h2>
+        <canvas id="pathwayChart"></canvas>
+    </div>
+    <div class="card">
+        <h2>Average Criterion Scores</h2>
+        <canvas id="avgScoresChart"></canvas>
+    </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="grid-2">
+    <div class="card">
+        <h2>Most Common Strengths</h2>
+        <canvas id="strengthChart"></canvas>
+    </div>
+    <div class="card">
+        <h2>Most Common Improvements</h2>
+        <canvas id="improvementChart"></canvas>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const pathwayData = {{ pathway_distribution|safe }};
+    const avgData = {{ average_scores|safe }};
+    const strengthData = {{ strength_frequency|safe }};
+    const improvementData = {{ improvement_frequency|safe }};
+
+    new Chart(document.getElementById('pathwayChart'), {
+        type: 'doughnut',
+        data: {
+            labels: pathwayData.map(d => d.primary_pathway),
+            datasets: [{
+                data: pathwayData.map(d => d.count),
+                backgroundColor: ['#1a1a2e', '#4a90d9', '#e8a838'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    new Chart(document.getElementById('avgScoresChart'), {
+        type: 'bar',
+        data: {
+            labels: avgData.map(d => d.criterion_name),
+            datasets: [{
+                label: 'Average Score',
+                data: avgData.map(d => parseFloat(d.avg_value).toFixed(2)),
+                backgroundColor: '#1a1a2e',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 1, ticks: { stepSize: 0.2 } }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('strengthChart'), {
+        type: 'bar',
+        data: {
+            labels: strengthData.map(d => d.criterion_name),
+            datasets: [{
+                label: 'Students',
+                data: strengthData.map(d => d.count),
+                backgroundColor: '#28a745',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('improvementChart'), {
+        type: 'bar',
+        data: {
+            labels: improvementData.map(d => d.criterion_name),
+            datasets: [{
+                label: 'Students',
+                data: improvementData.map(d => d.count),
+                backgroundColor: '#e8a838',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { display: false } }
+        }
+    });
+</script>
+
+{% endblock %}
+
+

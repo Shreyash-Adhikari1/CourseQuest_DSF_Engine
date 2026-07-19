@@ -1,0 +1,264 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}CourseQuest — Report #{{ assessment.test_taker_id }}{% endblock %}
+
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <p class="page-title" style="margin-bottom:0;">
+        Assessment Report — #{{ assessment.test_taker_id }}
+    </p>
+    <div style="display:flex; gap:0.5rem;">
+        <a href="/dashboard/report/{{ assessment.test_taker_id }}/pdf/"
+           class="btn btn-primary">
+            Download PDF
+        </a>
+        {% if assessment.test_taker_email %}
+        <a href="/dashboard/report/{{ assessment.test_taker_id }}/email/"
+           class="btn btn-secondary">
+            Send to Email
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Top Summary Row -->
+<div class="grid-3">
+    <div class="card">
+        <h2>Primary Recommendation</h2>
+        <div class="stat-number" style="font-size:1.4rem; color:#1a1a2e;">
+            {{ recommendation.primary_pathway }}
+        </div>
+    </div>
+    <div class="card">
+        <h2>Secondary Option</h2>
+        <div class="stat-number" style="font-size:1.4rem; color:#4a90d9;">
+            {{ recommendation.secondary_pathway }}
+        </div>
+    </div>
+    <div class="card">
+        <h2>Tertiary Option</h2>
+        <div class="stat-number" style="font-size:1.4rem; color:#e8a838;">
+            {{ recommendation.tertiary_pathway }}
+        </div>
+    </div>
+</div>
+
+<!-- Strengths and Improvements -->
+<div class="card">
+    <h2>Strengths and Improvement Areas</h2>
+    <div style="margin-bottom: 0.75rem;">
+        <strong style="font-size:0.85rem; color:#555;">STRENGTHS</strong><br>
+        {% for s in strengths %}
+        <span class="tag tag-strength">{{ s.criterion_name }}</span>
+        {% empty %}
+        <span style="color:#888; font-size:0.85rem;">None detected</span>
+        {% endfor %}
+    </div>
+    <div>
+        <strong style="font-size:0.85rem; color:#555;">IMPROVEMENT AREAS</strong><br>
+        {% for i in improvements %}
+        <span class="tag tag-improvement">{{ i.criterion_name }}</span>
+        {% empty %}
+        <span style="color:#888; font-size:0.85rem;">None detected</span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2">
+    <div class="card">
+        <h2>Criterion Profile</h2>
+        <canvas id="radarChart"></canvas>
+    </div>
+    <div class="card">
+        <h2>Pathway Comparison</h2>
+        <canvas id="pathwayChart"></canvas>
+    </div>
+</div>
+
+<!-- Knowledge vs Preference Chart -->
+<div class="card">
+    <h2>Knowledge vs Preference Breakdown</h2>
+    <canvas id="groupChart" style="max-height: 250px;"></canvas>
+</div>
+
+<!-- LLM Explanation -->
+<div class="card">
+    <h2>Your Recommendation Report</h2>
+    {% if recommendation.explanation %}
+    <div style="line-height: 1.8; white-space: pre-wrap; font-size: 0.95rem;">
+        {{ recommendation.explanation }}
+    </div>
+    {% else %}
+    <p style="color:#888;">Report is being generated. Please refresh in a moment.</p>
+    {% endif %}
+</div>
+
+<!-- Criterion Scores Table -->
+<div class="card">
+    <h2>Detailed Criterion Scores</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Criterion</th>
+                <th>Score</th>
+                <th>Confidence</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cs in criterion_scores %}
+            <tr>
+                <td>{{ cs.criterion_name }}</td>
+                <td>{{ cs.value }}</td>
+                <td>{{ cs.confidence }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pathway Scores Table -->
+<div class="card">
+    <h2>Pathway Score Breakdown</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Pathway</th>
+                <th>Knowledge Score</th>
+                <th>Preference Score</th>
+                <th>Final Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ps in pathway_scores %}
+            <tr>
+                <td><strong>{{ ps.pathway.name }}</strong></td>
+                <td>{{ ps.knowledge_score }}</td>
+                <td>{{ ps.preference_score }}</td>
+                <td><span class="badge">{{ ps.final_score }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Name and Email Form -->
+<div class="card">
+    <h2>Student Details</h2>
+    <p style="font-size:0.85rem; color:#888; margin-bottom:1rem;">
+        Optionally add name and email to personalise the report and enable email delivery.
+    </p>
+    <form method="POST">
+        {% csrf_token %}
+        <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+            <div style="flex:1;">
+                <label style="font-size:0.85rem; font-weight:600; color:#555;">Name</label><br>
+                <input
+                    type="text"
+                    name="test_taker_name"
+                    value="{{ assessment.test_taker_name }}"
+                    placeholder="Student name"
+                    style="width:100%; padding:0.5rem; border:1px solid #ddd;
+                           border-radius:4px; margin-top:0.25rem; font-size:0.9rem;">
+            </div>
+            <div style="flex:1;">
+                <label style="font-size:0.85rem; font-weight:600; color:#555;">Email</label><br>
+                <input
+                    type="email"
+                    name="test_taker_email"
+                    value="{{ assessment.test_taker_email }}"
+                    placeholder="student@email.com"
+                    style="width:100%; padding:0.5rem; border:1px solid #ddd;
+                           border-radius:4px; margin-top:0.25rem; font-size:0.9rem;">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Details</button>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const radarLabels = {{ radar_labels|safe }};
+    const radarValues = {{ radar_values|safe }};
+    const pathwayLabels = {{ pathway_labels|safe }};
+    const pathwayFinalScores = {{ pathway_final_scores|safe }};
+    const pathwayKnowledgeScores = {{ pathway_knowledge_scores|safe }};
+    const pathwayPreferenceScores = {{ pathway_preference_scores|safe }};
+
+    new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+            labels: radarLabels,
+            datasets: [{
+                label: 'Student Profile',
+                data: radarValues,
+                backgroundColor: 'rgba(26, 26, 46, 0.2)',
+                borderColor: '#1a1a2e',
+                pointBackgroundColor: '#1a1a2e',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 1,
+                    ticks: { stepSize: 0.2 }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('pathwayChart'), {
+        type: 'bar',
+        data: {
+            labels: pathwayLabels,
+            datasets: [{
+                label: 'Final Score',
+                data: pathwayFinalScores,
+                backgroundColor: ['#1a1a2e', '#4a90d9', '#e8a838'],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 2 }
+            },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    new Chart(document.getElementById('groupChart'), {
+        type: 'bar',
+        data: {
+            labels: pathwayLabels,
+            datasets: [
+                {
+                    label: 'Knowledge Score',
+                    data: pathwayKnowledgeScores,
+                    backgroundColor: '#1a1a2e',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Preference Score',
+                    data: pathwayPreferenceScores,
+                    backgroundColor: '#4a90d9',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, max: 2 }
+            },
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+</script>
+{% endblock %}
