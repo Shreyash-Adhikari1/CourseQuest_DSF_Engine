@@ -1,13 +1,95 @@
 import ollama
 from engine.services.rag.retriever import retrieve_context
 
+SYSTEM_PROMPT = """
+You are an automated academic pathway recommendation system.
+
+Generate professional, objective and evidence-based recommendation reports.
+
+Follow these rules exactly:
+
+- Never use first-person language.
+- Never write: I, me, my, we, our, us.
+- Address the student using "you" and "your".
+- Base every statement ONLY on:
+  - assessment responses
+  - identified strengths
+  - identified areas for improvement
+  - pathway information provided
+
+Never assume or invent information.
+
+The system has NO information about:
+- academic background
+- academic history
+- academic profile
+- current profile
+- educational profile
+- student profile
+- personal profile
+- work experience
+- employment history
+- previous studies
+- previous achievements
+- qualifications
+- GPA
+- grades
+- transcript
+- certifications
+- projects
+- extracurricular activities
+
+Never mention or imply any of these.
+
+Instead, use expressions such as:
+- Based on your assessment responses...
+- The assessment indicates...
+- The assessment findings suggest...
+- Your identified strengths indicate...
+- The assessment results support...
+
+Do not use:
+- Based on your academic background...
+- Based on your profile...
+- Your academic profile...
+- Your current profile...
+- Your educational history...
+- Considering your work experience...
+"""
+
+DISPLAY_NAMES = {
+    "security_interest": "Security Interest",
+    "security_awareness": "Security Awareness",
+    "ai_interest": "Artificial Intelligence Interest",
+    "programming_interest": "Programming Interest",
+    "logical_reasoning": "Logical Reasoning",
+    "systems_interest": "Systems Interest",
+}
 
 def build_prompt(recommendation_data: dict, context: str) -> str:
     """
     Builds a structured three-part prompt covering primary,
     secondary, and tertiary pathway recommendations.
     """
-    return f"""You are an academic counselor writing a personalized pathway recommendation report for a student.
+
+    strengths = [
+        DISPLAY_NAMES.get(item, item.replace("_", " ").title())
+        for item in recommendation_data["strengths"]
+    ]
+
+    improvements = [
+        DISPLAY_NAMES.get(item, item.replace("_", " ").title())
+        for item in recommendation_data["improvements"]
+    ]
+    return f"""
+
+    Strengths:
+    {', '.join(strengths)}
+
+    Areas for Improvement:
+    {', '.join(improvements)}
+
+Generate a professional recommendation report.
 
 Write a structured report with THREE clearly labeled sections as shown below.
 Each section should be 2-3 paragraphs. Do not mention numerical scores.
@@ -36,7 +118,7 @@ currently lacks for this pathway and why primary is the better fit]
 
 TERTIARY OPTION: {recommendation_data['tertiary_pathway']}
 [Your explanation here — acknowledge this pathway is possible, but be honest about
-the gap between the student's current profile and what this pathway demands]
+the gap between the student's current assessment results and the requirements of this pathway]
 
 Write the report now:"""
 
@@ -63,16 +145,24 @@ def generate_explanation(recommendation_data: dict) -> str:
     # retrieve relevant context from ChromaDB
     query = build_query(recommendation_data)
     context = retrieve_context(query)
+    print(context)
 
     # build the prompt
     prompt = build_prompt(recommendation_data, context)
 
     # call Ollama locally
     response = ollama.chat(
-        model="llama3.2",
+        model="qwen2.5:3b",
         messages=[
+            {
+        "role": "system",
+        "content": SYSTEM_PROMPT
+    },
             {"role": "user", "content": prompt}
-        ]
-    )
+        ],
+        options={
+        "temperature": 0.2,
+    }
+    ) 
 
     return response['message']['content']

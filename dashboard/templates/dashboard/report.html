@@ -6,7 +6,7 @@
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
     <p class="page-title" style="margin-bottom:0;">
-        Assessment Report — #{{ assessment.test_taker_id }}
+        Assessment Report - #{{ assessment.test_taker_id }}
     </p>
     <div style="display:flex; gap:0.5rem;">
         <a href="/dashboard/report/{{ assessment.test_taker_id }}/pdf/"
@@ -20,127 +20,6 @@
         </a>
         {% endif %}
     </div>
-</div>
-
-<!-- Top Summary Row -->
-<div class="grid-3">
-    <div class="card">
-        <h2>Primary Recommendation</h2>
-        <div class="stat-number" style="font-size:1.4rem; color:#1a1a2e;">
-            {{ recommendation.primary_pathway }}
-        </div>
-    </div>
-    <div class="card">
-        <h2>Secondary Option</h2>
-        <div class="stat-number" style="font-size:1.4rem; color:#4a90d9;">
-            {{ recommendation.secondary_pathway }}
-        </div>
-    </div>
-    <div class="card">
-        <h2>Tertiary Option</h2>
-        <div class="stat-number" style="font-size:1.4rem; color:#e8a838;">
-            {{ recommendation.tertiary_pathway }}
-        </div>
-    </div>
-</div>
-
-<!-- Strengths and Improvements -->
-<div class="card">
-    <h2>Strengths and Improvement Areas</h2>
-    <div style="margin-bottom: 0.75rem;">
-        <strong style="font-size:0.85rem; color:#555;">STRENGTHS</strong><br>
-        {% for s in strengths %}
-        <span class="tag tag-strength">{{ s.criterion_name }}</span>
-        {% empty %}
-        <span style="color:#888; font-size:0.85rem;">None detected</span>
-        {% endfor %}
-    </div>
-    <div>
-        <strong style="font-size:0.85rem; color:#555;">IMPROVEMENT AREAS</strong><br>
-        {% for i in improvements %}
-        <span class="tag tag-improvement">{{ i.criterion_name }}</span>
-        {% empty %}
-        <span style="color:#888; font-size:0.85rem;">None detected</span>
-        {% endfor %}
-    </div>
-</div>
-
-<!-- Charts Row -->
-<div class="grid-2">
-    <div class="card">
-        <h2>Criterion Profile</h2>
-        <canvas id="radarChart"></canvas>
-    </div>
-    <div class="card">
-        <h2>Pathway Comparison</h2>
-        <canvas id="pathwayChart"></canvas>
-    </div>
-</div>
-
-<!-- Knowledge vs Preference Chart -->
-<div class="card">
-    <h2>Knowledge vs Preference Breakdown</h2>
-    <canvas id="groupChart" style="max-height: 250px;"></canvas>
-</div>
-
-<!-- LLM Explanation -->
-<div class="card">
-    <h2>Your Recommendation Report</h2>
-    {% if recommendation.explanation %}
-    <div style="line-height: 1.8; white-space: pre-wrap; font-size: 0.95rem;">
-        {{ recommendation.explanation }}
-    </div>
-    {% else %}
-    <p style="color:#888;">Report is being generated. Please refresh in a moment.</p>
-    {% endif %}
-</div>
-
-<!-- Criterion Scores Table -->
-<div class="card">
-    <h2>Detailed Criterion Scores</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Criterion</th>
-                <th>Score</th>
-                <th>Confidence</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cs in criterion_scores %}
-            <tr>
-                <td>{{ cs.criterion_name }}</td>
-                <td>{{ cs.value }}</td>
-                <td>{{ cs.confidence }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<!-- Pathway Scores Table -->
-<div class="card">
-    <h2>Pathway Score Breakdown</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Pathway</th>
-                <th>Knowledge Score</th>
-                <th>Preference Score</th>
-                <th>Final Score</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for ps in pathway_scores %}
-            <tr>
-                <td><strong>{{ ps.pathway.name }}</strong></td>
-                <td>{{ ps.knowledge_score }}</td>
-                <td>{{ ps.preference_score }}</td>
-                <td><span class="badge">{{ ps.final_score }}</span></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 </div>
 
 <!-- Name and Email Form -->
@@ -175,6 +54,349 @@
         </div>
         <button type="submit" class="btn btn-primary">Save Details</button>
     </form>
+</div>
+
+<!-- Recommendation Summary -->
+<div class="grid-3">
+
+    <!-- Primary -->
+<div class="card" style="border-top:4px solid #4B5D88;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+
+            <h2 style="margin:0;">
+                Primary Recommendation
+            </h2>
+
+        </div>
+
+        <div style="
+            margin-top:1.2rem;
+            font-size:1.6rem;
+            font-weight:700;
+            color:#1a1a2e;
+        ">
+            {{ recommendation.primary_pathway }}
+        </div>
+    </div>
+
+    <!-- Secondary -->
+<div class="card" style="border-top:4px solid #74AEE8;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+
+            <h2 style="margin:0;">
+                Secondary Option
+            </h2>
+
+        </div>
+
+        <div style="
+            margin-top:1.2rem;
+            font-size:1.6rem;
+            font-weight:700;
+            color:#4a90d9;
+        ">
+            {{ recommendation.secondary_pathway }}
+        </div>
+    </div>
+
+
+   <!-- Tertiary -->
+<div class="card" style="border-top:4px solid #F0BF63;">
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">
+                Tertiary Option
+            </h2>
+        </div>
+
+        <div style="
+            margin-top:1.2rem;
+            font-size:1.6rem;
+            font-weight:700;
+            color:#e8a838;
+        ">
+            {{ recommendation.tertiary_pathway }}
+        </div>
+    </div>
+</div>
+
+<!-- Strengths and Improvements -->
+<div class="card">
+
+    <h2 style="margin-bottom:0.2rem;">
+        Strengths & Improvement Areas
+    </h2>
+
+    <!-- Strengths -->
+    <div style="
+        padding:1rem;
+        border-radius:10px;
+    ">
+
+        <div style="
+            font-size:.8rem;
+            font-weight:700;
+            color:#28a745;
+            letter-spacing:.05em;
+            margin-bottom:.7rem;
+        ">
+            IDENTIFIED STRENGTHS
+        </div>
+
+        {% for s in strengths %}
+
+            <span class="tag tag-strength">
+                ✓ {{ s.criterion_name }}
+            </span>
+
+        {% empty %}
+
+            <span style="color:#888; font-size:.85rem;">
+                None detected
+            </span>
+
+        {% endfor %}
+    </div>
+
+    <!-- Improvements -->
+    <div style="
+        padding:1rem;
+        border-radius:10px;
+    ">
+
+        <div style="
+            font-size:.8rem;
+            font-weight:700;
+            color:#b47a00;
+            letter-spacing:.05em;
+            margin-bottom:.7rem;
+        ">
+            AREAS FOR IMPROVEMENT
+        </div>
+
+        {% for i in improvements %}
+
+            <span class="tag tag-improvement">
+                ↑ {{ i.criterion_name }}
+            </span>
+
+        {% empty %}
+
+            <span style="color:#888; font-size:.85rem;">
+                None detected
+            </span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2">
+    <div class="card">
+        <h2>Criterion Profile</h2>
+        <canvas id="radarChart"></canvas>
+    </div>
+    <div class="card">
+        <h2>Pathway Comparison</h2>
+        <canvas id="pathwayChart"></canvas>
+    </div>
+</div>
+
+<!-- Knowledge vs Preference Chart -->
+<div class="card">
+    <h2>Knowledge vs Preference Breakdown</h2>
+    <canvas id="groupChart" style="max-height: 250px;"></canvas>
+</div>
+
+<!-- LLM Explanation -->
+<div class="card">
+    <h2 style="margin-bottom:1.5rem;">
+        Personalized Pathway Recommendation
+    </h2>
+
+    {% if recommendation.explanation %}
+
+    <div style="
+        background:#fcfcfc;
+        border:1px solid #e9e9e9;
+        border-radius:10px;
+        padding:2rem 2.5rem;
+        font-size:1rem;
+        line-height:1.9;
+        color:#333;
+        white-space:pre-wrap;
+        min-height:350px;
+    ">
+        {{ recommendation.explanation }}
+    </div>
+
+    {% else %}
+
+    <div style="
+        background:#fcfcfc;
+        border:1px solid #e9e9e9;
+        border-radius:10px;
+        padding:3rem;
+        text-align:center;
+        color:#888;
+    ">
+        Report is being generated. Please refresh in a moment.
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Criterion Scores Table -->
+<div class="card">
+
+    <div style="
+        margin-bottom:1.2rem;
+    ">
+        <h2 style="
+            margin:0;
+            text-transform:none;
+            letter-spacing:0;
+            font-size:1.15rem;
+            color:#1a1a2e;
+        ">
+            Detailed Criterion Scores
+        </h2>
+
+    </div>
+
+    <table>
+        <thead>
+    <tr>
+        <th style="font-weight:700;">Criterion</th>
+        <th style="font-weight:700;">Score</th>
+        <th style="font-weight:700;">Confidence</th>
+    </tr>
+</thead>
+
+        <tbody>
+        {% for cs in criterion_scores %}
+
+            <tr>
+                <td>
+                    <strong style="color:#1a1a2e;">
+                        {{ cs.criterion_name }}
+                    </strong>
+                </td>
+
+                <td>
+                    <span style="
+                        display:inline-block;
+                        padding:.35rem .75rem;
+                        border-radius:8px;
+                        background:#f1f5fb;
+                        color:#1a1a2e;
+                        font-weight:600;
+                        font-size:.85rem;
+                    ">
+                        {{ cs.value }}
+                    </span>
+                </td>
+
+                <td>
+                    <span style="
+                        display:inline-block;
+                        padding:.35rem .8rem;
+                        border-radius:20px;
+                        background:#e8f4fd;
+                        color:#1a6fc4;
+                        font-size:.8rem;
+                        font-weight:600;
+                    ">
+                        {{ cs.confidence }}
+                    </span>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3" style="
+                    text-align:center;
+                    color:#888;
+                    padding:1.5rem;
+                ">
+                    No criterion scores available.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<!-- Pathway Score Breakdown -->
+<div class="card">
+
+    <div style="margin-bottom:1.5rem;">
+
+        <h2 style="
+            margin:0;
+            text-transform:none;
+            letter-spacing:0;
+            font-size:1.15rem;
+            color:#1a1a2e;
+        ">
+            Pathway Score Breakdown
+        </h2>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+
+                <th>Pathway</th>
+                <th>Knowledge</th>
+                <th>Preference</th>
+                <th>Final</th>
+
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for ps in pathway_scores %}
+
+            <tr>
+                <td>
+
+                    <strong>
+                        {{ ps.pathway.name }}
+                    </strong>
+
+                </td>
+                <td>
+
+                    {{ ps.knowledge_score }}
+
+                </td>
+
+                <td>
+
+                    {{ ps.preference_score }}
+
+                </td>
+
+                <td>
+                    <span style="
+                        display:inline-block;
+                        padding:.35rem .8rem;
+                        border-radius:20px;
+                        background:#e8f4fd;
+                        color:#1a6fc4;
+                        font-weight:600;
+                    ">
+                        {{ ps.final_score }}
+                    </span>
+                </td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </div>
 
 {% endblock %}
