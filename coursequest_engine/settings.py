@@ -45,8 +45,8 @@ INSTALLED_APPS = [
     'engine',
     'recommendations',
     'api',
-    'dashboard'
-
+    'dashboard',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
@@ -130,7 +130,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
+# Email Sending
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
@@ -138,6 +138,12 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
+# Unity Cloud Save API
+UNITY_PROJECT_ID = config('UNITY_PROJECT_ID')
+UNITY_ENVIRONMENT_ID = config('UNITY_ENVIRONMENT_ID')
+UNITY_KEY_ID = config('UNITY_KEY_ID')
+UNITY_SECRET = config('UNITY_SECRET')
+UNITY_AUTH_HEADER = config("UNITY_AUTH_HEADER")
 
 
 MESSAGE_TAGS = {
