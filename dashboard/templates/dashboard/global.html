@@ -12,163 +12,585 @@
     <div class="stat-number">{{ total_assessments }}</div>
     <div class="stat-label">Total Assessments</div>
   </div>
+
   <div class="card">
     <div class="stat-number">{{ pathway_distribution|length }}</div>
     <div class="stat-label">Active Pathways</div>
   </div>
+
   <div class="card">
     <div class="stat-number">{{ recent_assessments|length }}</div>
     <div class="stat-label">Recent Sessions</div>
   </div>
 </div>
 
+
 <!-- Recent Assessments Table -->
 <div class="card">
-  <h2>Recent Assessments</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Test Taker ID</th>
-        <th>Session ID</th>
-        <th>Name</th>
-        <th>Submitted</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for assessment in recent_assessments %}
-      <tr>
-        <td><span class="badge">#{{ assessment.test_taker_id }}</span></td>
-        <td>{{ assessment.session_id }}</td>
-        <td>{{ assessment.test_taker_name|default:"—" }}</td>
-        <td>{{ assessment.submitted_at|date:"M d, Y H:i" }}</td>
-        <td>
-          <a
-            href="/dashboard/report/{{ assessment.test_taker_id }}/"
-            class="btn btn-primary"
+
+  <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:1rem;
+  ">
+    <h2 style="margin:0;">Recent Assessments</h2>
+
+    <span id="assessmentPageInfo" style="
+        font-size:0.8rem;
+        color:#888;
+    "></span>
+  </div>
+
+
+  <div style="overflow-x:auto;">
+
+    <table id="assessmentsTable">
+
+      <thead>
+        <tr>
+          <th>Test Taker ID</th>
+          <th>Session ID</th>
+          <th>Name</th>
+          <th>Submitted</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        {% for assessment in recent_assessments %}
+
+        <tr class="assessment-row">
+
+          <td>
+            <span class="badge">
+              #{{ assessment.test_taker_id }}
+            </span>
+          </td>
+
+          <td>
+            {{ assessment.session_id }}
+          </td>
+
+          <td>
+            {{ assessment.test_taker_name|default:"—" }}
+          </td>
+
+          <td>
+            {{ assessment.submitted_at|date:"M d, Y H:i" }}
+          </td>
+
+          <td>
+            <a
+              href="/dashboard/report/{{ assessment.test_taker_id }}/"
+              class="btn btn-primary"
+            >
+              View Report
+            </a>
+          </td>
+
+        </tr>
+
+        {% empty %}
+
+        <tr>
+          <td
+            colspan="5"
+            style="
+              text-align:center;
+              color:#888;
+              padding:2rem;
+            "
           >
-            View Report
-          </a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" style="text-align: center; color: #888">
-          No assessments yet.
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+            No assessments yet.
+          </td>
+        </tr>
+
+        {% endfor %}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+
+  <!-- Pagination -->
+  {% if recent_assessments %}
+
+  <div id="assessmentPagination" style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:1.2rem;
+      padding-top:1rem;
+      border-top:1px solid #eee;
+  ">
+
+    <button
+      id="prevAssessment"
+      class="pagination-btn"
+      type="button"
+    >
+      ← Previous
+    </button>
+
+    <span
+      id="assessmentPageNumber"
+      style="
+        font-size:0.85rem;
+        color:#555;
+        font-weight:500;
+      "
+    >
+    </span>
+
+    <button
+      id="nextAssessment"
+      class="pagination-btn"
+      type="button"
+    >
+      Next →
+    </button>
+
+  </div>
+
+  {% endif %}
+
 </div>
+
 
 <!-- Charts Row 1 -->
 <div class="grid-2">
+
     <div class="card">
         <h2>Pathway Distribution</h2>
         <canvas id="pathwayChart"></canvas>
     </div>
+
     <div class="card">
         <h2>Average Criterion Scores</h2>
         <canvas id="avgScoresChart"></canvas>
     </div>
+
 </div>
+
 
 <!-- Charts Row 2 -->
 <div class="grid-2">
+
     <div class="card">
         <h2>Most Common Strengths</h2>
         <canvas id="strengthChart"></canvas>
     </div>
+
     <div class="card">
         <h2>Most Common Improvements</h2>
         <canvas id="improvementChart"></canvas>
     </div>
+
 </div>
 
 {% endblock %}
 
+
 {% block extra_scripts %}
+
 <script>
-    const pathwayData = {{ pathway_distribution|safe }};
-    const avgData = {{ average_scores|safe }};
-    const strengthData = {{ strength_frequency|safe }};
-    const improvementData = {{ improvement_frequency|safe }};
 
-    new Chart(document.getElementById('pathwayChart'), {
-        type: 'doughnut',
-        data: {
-            labels: pathwayData.map(d => d.primary_pathway),
-            datasets: [{
-                data: pathwayData.map(d => d.count),
-                backgroundColor: ['#1a1a2e', '#4a90d9', '#e8a838'],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' } }
+    /*RECENT ASSESSMENTS PAGINATION */
+
+    const assessmentRows =
+        document.querySelectorAll('.assessment-row');
+
+    const rowsPerPage = 5;
+
+    let currentAssessmentPage = 1;
+
+    const totalAssessmentPages =
+        Math.ceil(assessmentRows.length / rowsPerPage);
+
+
+    function displayAssessmentPage(page) {
+
+        currentAssessmentPage = page;
+
+        const start =
+            (page - 1) * rowsPerPage;
+
+        const end =
+            start + rowsPerPage;
+
+
+        assessmentRows.forEach((row, index) => {
+
+            if (index >= start && index < end) {
+
+                row.style.display = '';
+
+            } else {
+
+                row.style.display = 'none';
+
+            }
+
+        });
+
+
+        document.getElementById(
+            'assessmentPageNumber'
+        ).textContent =
+            `Page ${currentAssessmentPage} of ${totalAssessmentPages}`;
+
+
+        document.getElementById(
+            'assessmentPageInfo'
+        ).textContent =
+            `${assessmentRows.length} assessment${assessmentRows.length !== 1 ? 's' : ''}`;
+
+
+        const previousButton =
+            document.getElementById('prevAssessment');
+
+        const nextButton =
+            document.getElementById('nextAssessment');
+
+
+        previousButton.disabled =
+            currentAssessmentPage === 1;
+
+        nextButton.disabled =
+            currentAssessmentPage === totalAssessmentPages;
+
+    }
+
+
+    document.getElementById(
+        'prevAssessment'
+    )?.addEventListener('click', function () {
+
+        if (currentAssessmentPage > 1) {
+
+            displayAssessmentPage(
+                currentAssessmentPage - 1
+            );
+
         }
+
     });
 
-    new Chart(document.getElementById('avgScoresChart'), {
-        type: 'bar',
-        data: {
-            labels: avgData.map(d => d.criterion_name),
-            datasets: [{
-                label: 'Average Score',
-                data: avgData.map(d => parseFloat(d.avg_value).toFixed(2)),
-                backgroundColor: '#1a1a2e',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: { beginAtZero: true, max: 1, ticks: { stepSize: 0.2 } }
+
+    document.getElementById(
+        'nextAssessment'
+    )?.addEventListener('click', function () {
+
+        if (currentAssessmentPage < totalAssessmentPages) {
+
+            displayAssessmentPage(
+                currentAssessmentPage + 1
+            );
+
+        }
+
+    });
+
+
+    if (assessmentRows.length > 0) {
+
+        displayAssessmentPage(1);
+
+    }
+
+
+    /* CHART DATA */
+
+    const pathwayData =
+        {{ pathway_distribution|safe }};
+
+    const avgData =
+        {{ average_scores|safe }};
+
+    const strengthData =
+        {{ strength_frequency|safe }};
+
+    const improvementData =
+        {{ improvement_frequency|safe }};
+
+
+    /*PATHWAY DISTRIBUTION */
+
+    new Chart(
+        document.getElementById('pathwayChart'),
+        {
+            type: 'doughnut',
+
+            data: {
+
+                labels:
+                    pathwayData.map(
+                        d => d.primary_pathway
+                    ),
+
+                datasets: [{
+
+                    data:
+                        pathwayData.map(
+                            d => d.count
+                        ),
+
+                    backgroundColor: [
+                        '#1a1a2e',
+                        '#4a90d9',
+                        '#e8a838'
+                    ],
+
+                    borderWidth: 2,
+
+                    borderColor: '#fff'
+
+                }]
+
             },
-            plugins: { legend: { display: false } }
-        }
-    });
 
-    new Chart(document.getElementById('strengthChart'), {
-        type: 'bar',
-        data: {
-            labels: strengthData.map(d => d.criterion_name),
-            datasets: [{
-                label: 'Students',
-                data: strengthData.map(d => d.count),
-                backgroundColor: '#28a745',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: { y: { beginAtZero: true } },
-            plugins: { legend: { display: false } }
-        }
-    });
+            options: {
 
-    new Chart(document.getElementById('improvementChart'), {
-        type: 'bar',
-        data: {
-            labels: improvementData.map(d => d.criterion_name),
-            datasets: [{
-                label: 'Students',
-                data: improvementData.map(d => d.count),
-                backgroundColor: '#e8a838',
-                borderRadius: 4
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: { y: { beginAtZero: true } },
-            plugins: { legend: { display: false } }
+                responsive: true,
+
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+
+            }
+
         }
-    });
+    );
+
+
+    /*AVERAGE CRITERION SCORES */
+
+    new Chart(
+        document.getElementById('avgScoresChart'),
+        {
+            type: 'bar',
+
+            data: {
+
+                labels:
+                    avgData.map(
+                        d => d.criterion_name
+                    ),
+
+                datasets: [{
+
+                    label: 'Average Score',
+
+                    data:
+                        avgData.map(
+                            d => parseFloat(
+                                d.avg_value
+                            ).toFixed(2)
+                        ),
+
+                    backgroundColor: '#1a1a2e',
+
+                    borderRadius: 4
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                scales: {
+
+                    y: {
+
+                        beginAtZero: true,
+
+                        max: 1,
+
+                        ticks: {
+                            stepSize: 0.2
+                        }
+
+                    }
+
+                },
+
+                plugins: {
+
+                    legend: {
+                        display: false
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+    /* MOST COMMON STRENGTHS */
+
+    new Chart(
+        document.getElementById('strengthChart'),
+        {
+            type: 'bar',
+
+            data: {
+
+                labels:
+                    strengthData.map(
+                        d => d.criterion_name
+                    ),
+
+                datasets: [{
+
+                    label: 'Students',
+
+                    data:
+                        strengthData.map(
+                            d => d.count
+                        ),
+
+                    backgroundColor: '#28a745',
+
+                    borderRadius: 4
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                scales: {
+
+                    y: {
+                        beginAtZero: true
+                    }
+
+                },
+
+                plugins: {
+
+                    legend: {
+                        display: false
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+    /*  MOST COMMON IMPROVEMENTS*/
+
+    new Chart(
+        document.getElementById('improvementChart'),
+        {
+            type: 'bar',
+
+            data: {
+
+                labels:
+                    improvementData.map(
+                        d => d.criterion_name
+                    ),
+
+                datasets: [{
+
+                    label: 'Students',
+
+                    data:
+                        improvementData.map(
+                            d => d.count
+                        ),
+
+                    backgroundColor: '#e8a838',
+
+                    borderRadius: 4
+
+                }]
+
+            },
+
+            options: {
+
+                responsive: true,
+
+                scales: {
+
+                    y: {
+                        beginAtZero: true
+                    }
+
+                },
+
+                plugins: {
+
+                    legend: {
+                        display: false
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
 </script>
 
+
+<style>
+
+    /* Pagination buttons */
+
+    .pagination-btn {
+        padding: 0.5rem 0.9rem;
+
+        border: 1px solid #ddd;
+
+        background: #fff;
+
+        color: #444;
+
+        border-radius: 6px;
+
+        font-size: 0.8rem;
+
+        cursor: pointer;
+
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+
+    .pagination-btn:hover:not(:disabled) {
+        background: #f5f5f7;
+        border-color: #cfcfd5;
+    }
+
+
+    .pagination-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    #assessmentsTable {
+        min-width: 700px;
+    }
+
+</style>
+
 {% endblock %}
-
-
