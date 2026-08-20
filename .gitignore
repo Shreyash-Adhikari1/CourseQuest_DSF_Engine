@@ -1,5 +1,5 @@
 # Virtual environment
-cq_env/
+cq_dsf_env/
 
 # Environment variables
 .env

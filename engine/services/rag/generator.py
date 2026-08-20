@@ -152,7 +152,7 @@ def generate_explanation(recommendation_data: dict) -> str:
 
     # call Ollama locally
     response = ollama.chat(
-        model="qwen2.5:3b",
+        model="llama3.2",
         messages=[
             {
         "role": "system",
