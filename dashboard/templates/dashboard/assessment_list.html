@@ -4,97 +4,403 @@
 
 {% block content %}
 
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-    <p class="page-title" style="margin-bottom:0;">All Assessments</p>
-    <a href="/dashboard/" class="btn btn-secondary">Back to Dashboard</a>
+<!-- Page Header -->
+<div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1.25rem;
+">
+
+    <p class="page-title" style="margin-bottom:0;">
+        All Assessments
+    </p>
+
+    <a
+    href="/dashboard/"
+    class="btn dashboard-back-btn"
+>
+   Back to Dashboard
+</a>
+
 </div>
 
-<div class="card">
-    <form method="GET" style="display:flex; gap:0.75rem; align-items:center;">
+
+<!-- Search Section -->
+<div class="card" style="
+    margin-bottom:1.50rem;
+">
+
+    <form
+        method="GET"
+        style="
+            display:flex;
+            gap:0.80rem;
+            align-items:center;
+        "
+    >
+
         <input
             type="text"
             name="q"
             value="{{ query }}"
             placeholder="Search by name, Test Taker ID, or Session ID..."
-            style="flex:1; padding:0.5rem 0.75rem; border:1px solid #ddd;
-                   border-radius:6px; font-size:0.9rem;">
-        <button type="submit" class="btn btn-primary">Search</button>
+            style="
+                flex:1;
+                padding:0.6rem 0.75rem;
+                border:1px solid #ddd;
+                border-radius:6px;
+                font-size:0.85rem;
+                outline:none;
+            "
+        >
+
+        <button
+            type="submit"
+            class="btn btn-primary"
+            style="
+                padding:0.6rem 1rem;
+                font-size:0.8rem;
+            "
+        >
+            Search
+        </button>
+
         {% if query %}
-        <a href="/dashboard/assessments/" class="btn btn-secondary">Clear</a>
+
+        <a
+            href="/dashboard/assessments/"
+            class="btn btn-secondary"
+            style="
+                padding:0.6rem 1rem;
+                font-size:0.8rem;
+            "
+        >
+            Clear
+        </a>
+
         {% endif %}
+
     </form>
-    {% if query %}
-    <p style="margin-top:0.75rem; font-size:0.85rem; color:#888;">
-        {{ total_count }} result{{ total_count|pluralize }} for "{{ query }}"
-    </p>
-    {% else %}
-    <p style="margin-top:0.75rem; font-size:0.85rem; color:#888;">
-        {{ total_count }} total assessment{{ total_count|pluralize }}
-    </p>
-    {% endif %}
+
+
 </div>
 
+
+<!-- Assessments Table -->
 <div class="card">
-    <table>
-        <thead>
-            <tr>
-                <th>Test Taker ID</th>
-                <th>Name</th>
-                <th>Session ID</th>
-                <th>Version</th>
-                <th>Submitted</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for assessment in page_obj %}
-            <tr>
-                <td><span class="badge">#{{ assessment.test_taker_id }}</span></td>
-                <td>{{ assessment.test_taker_name|default:"—" }}</td>
-                <td style="font-size:0.8rem; color:#888;">
-                    {{ assessment.session_id|truncatechars:20 }}
-                </td>
-                <td>{{ assessment.assessment_version }}</td>
-                <td>{{ assessment.submitted_at|date:"M d, Y H:i" }}</td>
-                <td>
-                    <a href="/dashboard/report/{{ assessment.test_taker_id }}/"
-                       class="btn btn-primary">
-                        View Report
-                    </a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" style="text-align:center; color:#888; padding:2rem;">
-                    {% if query %}
-                    No assessments found for "{{ query }}"
-                    {% else %}
-                    No assessments in the database yet.
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
 
-    {% if page_obj.has_other_pages %}
-    <div style="display:flex; justify-content:center; gap:0.5rem;
-                margin-top:1.5rem; align-items:center;">
-        {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
-           class="btn btn-secondary">Previous</a>
-        {% endif %}
+    <!-- Table Heading -->
 
-        <span style="font-size:0.85rem; color:#888;">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:0.9rem;
+    ">
+
+        <h2 style="
+            margin:0;
+            font-size:1rem;
+        ">
+            Assessment Records
+        </h2>
+
+        {% if page_obj.has_other_pages %}
+
+        <span style="
+            font-size:0.78rem;
+            color:#565555;
+        ">
+            {{ page_obj.paginator.count }}
+            assessment{{ page_obj.paginator.count|pluralize }}
         </span>
 
-        {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
-           class="btn btn-secondary">Next</a>
         {% endif %}
+
     </div>
+
+
+    <!-- Responsive Table -->
+
+    <div style="
+        overflow-x:auto;
+    ">
+
+        <table id="assessmentsTable" style="
+            min-width:750px;
+        ">
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Test Taker ID
+                    </th>
+
+                    <th>
+                        Name
+                    </th>
+
+                    <th>
+                        Session ID
+                    </th>
+
+                    <th>
+                        Version
+                    </th>
+
+                    <th>
+                        Submitted
+                    </th>
+
+                    <th style="
+                        text-align:right;
+                    ">
+                        Action
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for assessment in page_obj %}
+
+                <tr>
+
+                    <!-- Test Taker ID -->
+
+                    <td>
+                        <span class="badge">
+                            #{{ assessment.test_taker_id }}
+                        </span>
+                    </td>
+
+
+                    <!-- Name -->
+
+                    <td>
+                        {{ assessment.test_taker_name|default:"—" }}
+                    </td>
+
+
+                    <!-- Session ID -->
+
+                    <td style="
+                        font-size:0.8rem;
+                        color:#888;
+                    ">
+                        {{ assessment.session_id|truncatechars:20 }}
+                    </td>
+
+
+                    <!-- Version -->
+
+                    <td>
+                        {{ assessment.assessment_version }}
+                    </td>
+
+
+                    <!-- Submitted -->
+
+                    <td style="
+                        font-size:0.8rem;
+                        color:#777;
+                        white-space:nowrap;
+                    ">
+                        {{ assessment.submitted_at|date:"M d, Y H:i" }}
+                    </td>
+
+
+                    <!-- Action -->
+
+                    <td style="
+                        text-align:right;
+                    ">
+
+                        <a
+                            href="/dashboard/report/{{ assessment.test_taker_id }}/"
+                            class="btn btn-primary"
+                            style="
+                                padding:0.45rem 0.8rem;
+                                font-size:0.78rem;
+                            "
+                        >
+                            View Report
+                        </a>
+
+                    </td>
+
+                </tr>
+
+
+                {% empty %}
+
+                <tr>
+
+                    <td
+                        colspan="6"
+                        style="
+                            text-align:center;
+                            color:#888;
+                            padding:2rem;
+                        "
+                    >
+
+                        {% if query %}
+
+                            No assessments found for
+                            "{{ query }}"
+
+                        {% else %}
+
+                            No assessments in the database yet.
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- Pagination -->
+
+    {% if page_obj.has_other_pages %}
+
+    <div style="
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:0.8rem;
+        margin-top:1.25rem;
+        padding-top:1rem;
+        border-top:1px solid #eee;
+    ">
+
+
+        <!-- Previous -->
+
+        {% if page_obj.has_previous %}
+
+        <a
+            href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+            class="btn btn-secondary"
+            style="
+                padding:0.45rem 0.8rem;
+                font-size:0.78rem;
+            "
+        >
+            ← Previous
+        </a>
+
+        {% endif %}
+
+
+        <!-- Page Number -->
+
+        <span style="
+             font-size:0.85rem;
+                color:#555;
+                font-weight:500;
+                min-width:90px;
+                text-align:center;
+        ">
+
+            Page
+                {{ page_obj.number }}
+            of
+                {{ page_obj.paginator.num_pages }}
+
+        </span>
+
+
+        <!-- Next -->
+
+        {% if page_obj.has_next %}
+
+        <a
+            href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+            class="btn btn-secondary"
+            style="
+                padding:0.45rem 0.8rem;
+                font-size:0.78rem;
+            "
+        >
+            Next →
+        </a>
+
+        {% endif %}
+
+    </div>
+
     {% endif %}
+
 </div>
+
+
+<!-- Small Improvements -->
+
+<style>
+
+    /* Keep the table readable on smaller screens */
+
+    #assessmentsTable {
+        min-width:750px;
+    }
+
+
+    /* Subtle row hover */
+
+    #assessmentsTable tbody tr {
+        transition:background 0.15s ease;
+    }
+
+    #assessmentsTable tbody tr:hover {
+        background:#fafafa;
+    }
+
+
+    /* Search input */
+
+    input[name="q"]:focus {
+        border-color:#aaa !important;
+        box-shadow:0 0 0 2px rgba(0,0,0,0.04);
+    }
+
+    .dashboard-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.55rem 1rem;
+        background: #4a90d9;
+        color: #ffffff;
+        border: 1px solid #4a90d9;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .dashboard-back-btn:hover {
+        background: #357abd;
+        border-color: #357abd;
+        color: #ffffff;
+        transform: translateY(-1px);
+    }
+
+</style>
 
 {% endblock %}
