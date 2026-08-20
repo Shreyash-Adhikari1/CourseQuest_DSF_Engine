@@ -28,136 +28,169 @@
 <!-- Recent Assessments Table -->
 <div class="card">
 
-  <div style="
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:1rem;
-  ">
-    <h2 style="margin:0;">Recent Assessments</h2>
-    <a href="/dashboard/assessments/" class="btn btn-secondary">View All</a>
+    <!-- Section Header -->
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        margin-bottom:1.2rem;
+    ">
 
-    <span id="assessmentPageInfo" style="
-        font-size:0.8rem;
-        color:#888;
-    "></span>
-  </div>
+        <!-- Title + Count -->
+        <div>
+            <h2 style="
+                margin:0 0 0.3rem 0;
+                font-size:2rem;
+            ">
+                Recent Assessments
+            </h2>
+
+            <span id="assessmentPageInfo" style="
+                font-size:0.9rem;
+                color:#565555;
+            "></span>
+        </div>
 
 
-  <div style="overflow-x:auto;">
-
-    <table id="assessmentsTable">
-
-      <thead>
-        <tr>
-          <th>Test Taker ID</th>
-          <th>Session ID</th>
-          <th>Name</th>
-          <th>Submitted</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        {% for assessment in recent_assessments %}
-
-        <tr class="assessment-row">
-
-          <td>
-            <span class="badge">
-              #{{ assessment.test_taker_id }}
-            </span>
-          </td>
-
-          <td>
-            {{ assessment.session_id }}
-          </td>
-
-          <td>
-            {{ assessment.test_taker_name|default:"—" }}
-          </td>
-
-          <td>
-            {{ assessment.submitted_at|date:"M d, Y H:i" }}
-          </td>
-
-          <td>
-            <a
-              href="/dashboard/report/{{ assessment.test_taker_id }}/"
-              class="btn btn-primary"
-            >
-              View Report
-            </a>
-          </td>
-
-        </tr>
-
-        {% empty %}
-
-        <tr>
-          <td
-            colspan="5"
+        <!-- View All Button -->
+        <a
+            href="/dashboard/assessments/"
+            class="btn btn-view-all"
             style="
-              text-align:center;
-              color:#888;
-              padding:2rem;
+                display:inline-flex;
+                align-items:center;
+                gap:0.45rem;
+                padding:0.55rem 1rem;
+                font-size:0.9rem;
+                font-weight:600;
+                border-radius:8px;
+                box-shadow:0 2px 5px rgba(26,26,46,0.12);
+                white-space:nowrap;
             "
-          >
-            No assessments yet.
-          </td>
-        </tr>
+        >
+            View All
 
-        {% endfor %}
+        </a>
 
-      </tbody>
-
-    </table>
-
-  </div>
+    </div>
 
 
-  <!-- Pagination -->
-  {% if recent_assessments %}
+    <!-- Table -->
+    <div style="overflow-x:auto;">
+        <table id="assessmentsTable">
+            <thead>
+                <tr>
+                    <th>Test Taker ID</th>
+                    <th>Session ID</th>
+                    <th>Name</th>
+                    <th>Submitted</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
 
-  <div id="assessmentPagination" style="
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-top:1.2rem;
-      padding-top:1rem;
-      border-top:1px solid #eee;
-  ">
+            <tbody>
 
-    <button
-      id="prevAssessment"
-      class="pagination-btn"
-      type="button"
-    >
-      ← Previous
-    </button>
+                {% for assessment in recent_assessments %}
 
-    <span
-      id="assessmentPageNumber"
-      style="
-        font-size:0.85rem;
-        color:#555;
-        font-weight:500;
-      "
-    >
-    </span>
+                <tr class="assessment-row">
 
-    <button
-      id="nextAssessment"
-      class="pagination-btn"
-      type="button"
-    >
-      Next →
-    </button>
+                    <td>
+                        <span class="badge">
+                            #{{ assessment.test_taker_id }}
+                        </span>
+                    </td>
 
-  </div>
+                    <td>
+                        {{ assessment.session_id }}
+                    </td>
 
-  {% endif %}
+                    <td>
+                        {{ assessment.test_taker_name|default:"—" }}
+                    </td>
+
+                    <td>
+                        {{ assessment.submitted_at|date:"M d, Y H:i" }}
+                    </td>
+
+                    <td>
+                        <a
+                            href="/dashboard/report/{{ assessment.test_taker_id }}/"
+                            class="btn btn-primary"
+                        >
+                            View Report
+                        </a>
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                <tr>
+                    <td
+                        colspan="5"
+                        style="
+                            text-align:center;
+                            color:#888;
+                            padding:2rem;
+                        "
+                    >
+                        No assessments yet.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- Pagination -->
+    {% if recent_assessments %}
+
+    <div id="assessmentPagination" style="
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        margin-top:1.2rem;
+        padding-top:1rem;
+        border-top:1px solid #eee;
+        gap:0.8rem;
+    ">
+
+        <button
+            id="prevAssessment"
+            class="pagination-btn"
+            type="button"
+        >
+            ← Previous
+        </button>
+
+
+        <span
+            id="assessmentPageNumber"
+            style="
+                font-size:0.85rem;
+                color:#555;
+                font-weight:500;
+                min-width:90px;
+                text-align:center;
+            "
+        >
+        </span>
+
+
+        <button
+            id="nextAssessment"
+            class="pagination-btn"
+            type="button"
+        >
+            Next →
+        </button>
+
+    </div>
+
+    {% endif %}
 
 </div>
 
@@ -591,6 +624,17 @@
     #assessmentsTable {
         min-width: 700px;
     }
+
+    .btn-view-all {
+    background: #4a90d9;
+    color: #fff;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-view-all:hover {
+    background: #357abd;
+    transform: translateY(-1px);
+}
 
 </style>
 
