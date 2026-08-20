@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from xhtml2pdf import pisa
 from django.template.loader import render_to_string
 from django.shortcuts import render, get_object_or_404, redirect
+from django.core.paginator import Paginator
 import io
 
 
@@ -47,9 +48,10 @@ def global_dashboard(request):
     ).order_by('criterion_name')
 
     # recent assessments list
-    recent_assessments = Assessment.objects.order_by(
-        '-submitted_at'
-    )[:10]
+    recent_assessments_qs = Assessment.objects.order_by('-submitted_at')
+    paginator = Paginator(recent_assessments_qs, 20)
+    page_number = request.GET.get('page')
+    recent_assessments = paginator.get_page(page_number)
 
     context = {
         'total_assessments': total_assessments,
@@ -68,7 +70,13 @@ def individual_report(request, test_taker_id):
     Individual report page — full recommendation and charts
     for one specific assessment.
     """
-    assessment = get_object_or_404(Assessment, test_taker_id=test_taker_id)
+    assessment = Assessment.objects.filter(
+    test_taker_id=test_taker_id
+    ).order_by('-submitted_at').first()
+
+    if not assessment:
+        from django.http import Http404
+        raise Http404("Assessment not found")
 
     # handle name/email form submission
     if request.method == 'POST':
@@ -132,7 +140,13 @@ def download_pdf(request, test_taker_id):
     """
     Generates and downloads a PDF report for one assessment.
     """
-    assessment = get_object_or_404(Assessment, test_taker_id=test_taker_id)
+    assessment = Assessment.objects.filter(
+        test_taker_id=test_taker_id
+        ).order_by('-submitted_at').first()
+    if not assessment:
+            from django.http import Http404
+            raise Http404("Assessment not found")
+    
     recommendation = get_object_or_404(Recommendation, assessment=assessment)
     criterion_scores = CriterionScore.objects.filter(assessment=assessment)
     pathway_scores = PathwayScore.objects.filter(
@@ -169,7 +183,13 @@ def send_report_email(request, test_taker_id):
     Generates PDF and sends it to the student's email.
     Only works if email is saved on the assessment.
     """
-    assessment = get_object_or_404(Assessment, test_taker_id=test_taker_id)
+    assessment = Assessment.objects.filter(
+        test_taker_id=test_taker_id
+        ).order_by('-submitted_at').first()
+    
+    if not assessment:
+            from django.http import Http404
+            raise Http404("Assessment not found")
 
     if not assessment.test_taker_email:
         from django.contrib import messages
@@ -229,3 +249,29 @@ CourseQuest Team''',
     from django.contrib import messages
     messages.success(request, f'Report sent to {assessment.test_taker_email}')
     return redirect('individual_report', test_taker_id=test_taker_id)
+
+def assessment_list(request):
+    """
+    Lists all assessments with search by name or test_taker_id.
+    """
+    query = request.GET.get('q', '').strip()
+    assessments = Assessment.objects.order_by('-submitted_at')
+
+    if query:
+        from django.db.models import Q
+        assessments = assessments.filter(
+            Q(test_taker_name__icontains=query) |
+            Q(test_taker_id__icontains=query) |
+            Q(session_id__icontains=query)
+        )
+
+    paginator = Paginator(assessments, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'total_count': assessments.count(),
+    }
+    return render(request, 'dashboard/assessment_list.html', context)
