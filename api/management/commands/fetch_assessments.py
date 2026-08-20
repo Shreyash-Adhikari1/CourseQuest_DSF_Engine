@@ -139,7 +139,7 @@ class Command(BaseCommand):
                     self.stdout.write(f"Running CQ-DSF engine for assessment {assessment.id}...")
                     recommendation = run_engine(assessment_id=assessment.id)
                     self.stdout.write(self.style.SUCCESS(
-                        f"Recommendation generated: {recommendation}"
+                        f"Recommended pathway: {recommendation.primary_pathway}"
                     ))
 
                     processed += 1
